@@ -4,6 +4,16 @@ var cors = require("cors");
 var app = express();
 app.use(cors());
 
+class Response {
+	constructor(pLabel) {
+		this.label = pLabel;
+		this.data = [];
+	}
+	addData(pDataObj) {
+		this.data.push(pDataObj);
+	}
+}
+
 app.get("/", async (req, res) => {
 	res.json({ Ping: "Pong" });
 });
@@ -37,20 +47,23 @@ app.get("/:keyword/:keyword2", async (req, res) => {
 							JSON.parse(results).default.timelineData.map((data, i) => {
 								result3.push({ date: data.formattedTime, value: data.value[0] });
 							});
-							var final = new Array(result.length + 1);
-							final[0] = new Array(4);
-							final[0][0] = "Years";
-							final[0][1] = req.params.keyword;
-							final[0][2] = req.params.keyword2;
-							final[0][3] = req.params.keyword + " " + req.params.keyword2;
-							for (var i = 1; i < final.length; i++) {
-								final[i] = new Array(4);
-								final[i][0] = result[i - 1] && result[i - 1].date ? result[i - 1].date : "";
-								final[i][1] = result[i - 1] && result[i - 1].value;
-								final[i][2] = result2 && result2.length && result2[i - 1].value ? result2[i - 1].value : 0;
-								final[i][3] = result3 && result3.length && result3[i - 1].value ? result3[i - 1].value : 0;
+							var finalResponse = new Response({
+								date: "Dates",
+								keyword1: req.params.keyword,
+								keyword2: req.params.keyword2,
+								bothKeywords: req.params.keyword + " " + req.params.keyword2,
+							});
+
+							for (var i = 1; i < result.length; i++) {
+								let data = {
+									date: result[i - 1] && result[i - 1].date ? result[i - 1].date : "",
+									keyword1: result[i - 1] && result[i - 1].value,
+									keyword2: result2 && result2.length && result2[i - 1].value ? result2[i - 1].value : 0,
+									bothKeywords: result3 && result3.length && result3[i - 1].value ? result3[i - 1].value : 0,
+								};
+								finalResponse.addData(data);
 							}
-							res.json(final);
+							res.json(finalResponse);
 						});
 					});
 			});
