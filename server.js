@@ -18,14 +18,15 @@ app.get("/", async (req, res) => {
 	res.json({ Ping: "Pong" });
 });
 
-app.get("/:keyword/:keyword2", async (req, res) => {
+app.get("/:keyword/:keyword2/:startDate", async (req, res) => {
 	try {
 		//console.log('reached')
 		var result = [];
 		var result2 = [];
 		var result3 = [];
+		var startDate = new Date(req.params.startDate);
 		googleTrends
-			.interestOverTime({ keyword: req.params.keyword })
+			.interestOverTime({ keyword: req.params.keyword, startTime: startDate })
 			.then(function (results) {
 				// console.log((JSON.parse(results).default.timelineData[0]));
 				JSON.parse(results).default.timelineData.map((data, i) => {
@@ -34,7 +35,7 @@ app.get("/:keyword/:keyword2", async (req, res) => {
 			})
 			.then(function () {
 				googleTrends
-					.interestOverTime({ keyword: req.params.keyword2 })
+					.interestOverTime({ keyword: req.params.keyword2, startTime: startDate })
 					.then(function (results) {
 						// console.log((JSON.parse(results).default.timelineData[0]));
 						JSON.parse(results).default.timelineData.map((data, i) => {
@@ -42,29 +43,31 @@ app.get("/:keyword/:keyword2", async (req, res) => {
 						});
 					})
 					.then(function () {
-						googleTrends.interestOverTime({ keyword: req.params.keyword + " " + req.params.keyword2 }).then(function (results) {
-							// console.log((JSON.parse(results).default.timelineData[0]));
-							JSON.parse(results).default.timelineData.map((data, i) => {
-								result3.push({ date: data.formattedTime, value: data.value[0] });
-							});
-							var finalResponse = new Response({
-								date: "Dates",
-								keyword1: req.params.keyword,
-								keyword2: req.params.keyword2,
-								bothKeywords: req.params.keyword + " " + req.params.keyword2,
-							});
+						googleTrends
+							.interestOverTime({ keyword: req.params.keyword + " " + req.params.keyword2, startTime: startDate })
+							.then(function (results) {
+								// console.log((JSON.parse(results).default.timelineData[0]));
+								JSON.parse(results).default.timelineData.map((data, i) => {
+									result3.push({ date: data.formattedTime, value: data.value[0] });
+								});
+								var finalResponse = new Response({
+									date: "Dates",
+									keyword1: req.params.keyword,
+									keyword2: req.params.keyword2,
+									bothKeywords: req.params.keyword + " " + req.params.keyword2,
+								});
 
-							for (var i = 1; i < result.length; i++) {
-								let data = {
-									date: result[i - 1] && result[i - 1].date ? result[i - 1].date : "",
-									keyword1: result[i - 1] && result[i - 1].value,
-									keyword2: result2 && result2.length && result2[i - 1].value ? result2[i - 1].value : 0,
-									bothKeywords: result3 && result3.length && result3[i - 1].value ? result3[i - 1].value : 0,
-								};
-								finalResponse.addData(data);
-							}
-							res.json(finalResponse);
-						});
+								for (var i = 1; i < result.length; i++) {
+									let data = {
+										date: result[i - 1] && result[i - 1].date ? result[i - 1].date : "",
+										keyword1: result[i - 1] && result[i - 1].value,
+										keyword2: result2 && result2.length && result2[i - 1].value ? result2[i - 1].value : 0,
+										bothKeywords: result3 && result3.length && result3[i - 1].value ? result3[i - 1].value : 0,
+									};
+									finalResponse.addData(data);
+								}
+								res.json(finalResponse);
+							});
 					});
 			});
 	} catch (err) {
@@ -87,5 +90,5 @@ app.get("/:country", async (req, res) => {
 	}
 });
 app.listen(process.env.PORT || "3001", function () {
-	console.log("Server started on port " + process.env.PORT);
+	console.log("Server started on port " + (process.env.PORT|| "3001"));
 });
